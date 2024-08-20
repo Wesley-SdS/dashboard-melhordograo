@@ -1,21 +1,28 @@
-// src/controllers/product/updateProduct.ts
 import { Request, Response } from "express";
 import Product from "../../models/productModel";
 
-const updateProductController = async (req: Request, res: Response) => {
-  const { id } = req.params;
-
+export const updateProduct = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
-    const updatedProduct = await Product.findByIdAndUpdate(id, req.body, {
-      new: true
-    });
+    const productId = req.params.id;
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      req.body,
+      { new: true }
+    );
+
     if (!updatedProduct) {
-      return res.status(404).json({ message: "Product not found" });
+      res.status(404).json({ message: "Produto não encontrado" });
+      return;
     }
-    res.json(updatedProduct);
+
+    res
+      .status(200)
+      .json({ message: "Produto atualizado com sucesso", updatedProduct });
   } catch (error) {
-    res.status(400).json({ error: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ message: "Erro ao atualizar produto" });
   }
 };
-
-export default updateProductController;

@@ -1,19 +1,22 @@
-// src/controllers/product/getProductDetails.ts
 import { Request, Response } from "express";
 import Product from "../../models/productModel";
 
-const getProductDetails = async (req: Request, res: Response) => {
-  const { id } = req.params;
-
+export const getProductDetails = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
-    const product = await Product.findById(id);
+    const productId = req.params.id;
+    const product = await Product.findById(productId);
+
     if (!product) {
-      return res.status(404).json({ message: "Product not found" });
+      res.status(404).json({ message: "Produto não encontrado" });
+      return;
     }
-    res.json(product);
+
+    res.status(200).json(product);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error(error);
+    res.status(500).json({ message: "Erro ao buscar detalhes do produto" });
   }
 };
-
-export default getProductDetails;

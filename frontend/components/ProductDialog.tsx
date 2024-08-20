@@ -27,17 +27,56 @@ import { ArrowLeftRight, UploadIcon } from "lucide-react";
 import { CategoryManager } from "./CategoryManager";
 import { SeoPreview } from "./SeoPreview";
 
+import { Product } from "@/app/types/types";
+import { fetchProducts } from "@/services/ecommerce";
+
+export interface ProductDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  product?: Product | null; // Aceita Product, undefined ou null
+  mode: "create" | "edit";
+}
+
 const Editor = dynamic(
   () => import("react-draft-wysiwyg").then((mod) => mod.Editor),
   { ssr: false }
 );
 
-interface ProductDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+export function ProductDialog({
+  isOpen,
+  onClose,
+  product,
+  mode
+}: ProductDialogProps) {
+  const [productName, setProductName] = useState("");
+  const [productActivated, setProductActivated] = useState(false);
+  const [productVariation, setProductVariation] = useState(false);
+  const [productFeatured, setProductFeatured] = useState(false);
+  const [productStatus, setProductStatus] = useState("");
+  const [productDescription, setProductDescription] = useState("");
+  const [productVideo, setProductVideo] = useState("");
+  const [costPrice, setCostPrice] = useState(0);
+  const [sellingPrice, setSellingPrice] = useState(0);
+  const [promoPrice, setPromoPrice] = useState(0);
+  const [productSKU, setProductSKU] = useState("");
+  const [gtin, setGtin] = useState("");
+  const [mpn, setMpn] = useState("");
+  const [ncm, setNcm] = useState("");
+  const [quantity, setQuantity] = useState(0);
+  const [availability, setAvailability] = useState("");
+  const [packageSize, setPackageSize] = useState("");
+  const [weight, setWeight] = useState(0);
+  const [height, setHeight] = useState(0);
+  const [width, setWidth] = useState(0);
+  const [depth, setDepth] = useState(0);
+  const [category, setCategory] = useState("");
+  const [tagTitle, setTagTitle] = useState("");
+  const [metaDescription, setMetaDescription] = useState("");
+  const [productUrl, setProductUrl] = useState("");
 
-export function ProductDialog({ isOpen, onClose }: ProductDialogProps) {
+  const [brand, setBrand] = useState("");
+  const [productImages, setProductImages] = useState<string[]>([]);
+
   const [editorState, setEditorState] = useState(EditorState.createEmpty());
   const isMounted = useRef(false);
 
@@ -67,26 +106,169 @@ export function ProductDialog({ isOpen, onClose }: ProductDialogProps) {
       setModificationDate(formatDate(currentDate));
     }
   }, [isOpen]);
+
   useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
+    if (product && mode === "edit") {
+      setProductName(product.productName || "");
+      setProductActivated(product.productActivated || false);
+      setProductVariation(product.productVariation || false);
+      setProductFeatured(product.productFeatured || false);
+      setProductStatus(product.productStatus || "");
+      setProductDescription(product.productDescription || "");
+      setProductVideo(product.productVideo || "");
+      setCostPrice(product.costPrice || 0);
+      setSellingPrice(product.sellingPrice || 0);
+      setPromoPrice(product.promoPrice || 0);
+      setProductSKU(product.productSKU || "");
+      setGtin(product.gtin || "");
+      setMpn(product.mpn || "");
+      setNcm(product.ncm || "");
+      setQuantity(product.quantity || 0);
+      setAvailability(product.availability || "");
+      setPackageSize(product.packageSize || "");
+      setWeight(product.weight || 0);
+      setHeight(product.height || 0);
+      setWidth(product.width || 0);
+      setDepth(product.depth || 0);
+      setCategory(product.categories[0] || "");
+      setBrand(product.brand || "");
+      setTagTitle(product.seoTitle || "");
+      setMetaDescription(product.seoDescription || "");
+      setProductUrl(product.productUrl || "");
+      // Se houver imagens do produto
+      setProductImages(product.productImages || []);
+    } else {
+      resetForm();
+    }
+  }, [product, mode, isOpen]);
+
+  const resetForm = () => {
+    setProductName("");
+    setProductActivated(false);
+    setProductVariation(false);
+    setProductFeatured(false);
+    setProductStatus("");
+    setProductDescription("");
+    setProductVideo("");
+    setCostPrice(0);
+    setSellingPrice(0);
+    setPromoPrice(0);
+    setProductSKU("");
+    setGtin("");
+    setMpn("");
+    setNcm("");
+    setQuantity(0);
+    setAvailability("");
+    setPackageSize("");
+    setWeight(0);
+    setHeight(0);
+    setWidth(0);
+    setDepth(0);
+    setCategory("");
+    setBrand("");
+    setTagTitle("");
+    setMetaDescription("");
+    setProductUrl("");
+    setProductImages([]);
+  };
 
   const handleEditorStateChange = (newEditorState: EditorState) => {
     if (isMounted.current) {
       setEditorState(newEditorState);
     }
   };
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const handleClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (event.target.files) {
+      const file = event.target.files[0];
+      const formData = new FormData();
+      formData.append("image", file);
+
+      try {
+        const response = await fetch("http://localhost:3001/upload/image", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          console.log("Imagem carregada com sucesso:", data.url);
+        } else {
+          console.error("Erro ao carregar a imagem:", data.message);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar a imagem:", error);
+      }
     }
   };
 
+  <input
+    type="file"
+    id="productImages"
+    className="hidden"
+    ref={fileInputRef}
+    multiple
+    onChange={handleFileChange}
+  />;
+
+  const handleSubmit = async () => {
+    const formData = new FormData();
+
+    formData.append("productName", productName); // Corrigido para "productName"
+    formData.append("productActivated", String(productActivated)); // Corrigido para "productActivated"
+    formData.append("productVariation", String(productVariation)); // Corrigido para "productVariation"
+    formData.append("productFeatured", String(productFeatured)); // Corrigido para "productFeatured"
+    formData.append("productStatus", productStatus); // Corrigido para "productStatus"
+    formData.append("productDescription", productDescription); // Corrigido para "productDescription"
+    formData.append("productVideo", productVideo || ""); // Pode ser vazio se não houver vídeo
+    formData.append("costPrice", String(costPrice)); // Corrigido para "costPrice"
+    formData.append("sellingPrice", String(sellingPrice)); // Corrigido para "sellingPrice"
+    formData.append("promoPrice", promoPrice ? String(promoPrice) : ""); // Pode ser vazio se não houver preço promocional
+    formData.append("productSKU", productSKU); // Corrigido para "productSKU"
+    formData.append("gtin", gtin || ""); // Pode ser vazio se não houver GTIN
+    formData.append("mpn", mpn || ""); // Pode ser vazio se não houver MPN
+    formData.append("ncm", ncm || ""); // Pode ser vazio se não houver NCM
+    formData.append("quantity", String(quantity)); // Corrigido para "quantity"
+    formData.append("availability", availability); // Corrigido para "availability"
+    formData.append("packageSize", packageSize || ""); // Pode ser vazio se não houver tamanho de embalagem
+    formData.append("weight", weight ? String(weight) : ""); // Pode ser vazio se não houver peso
+    formData.append("height", height ? String(height) : ""); // Pode ser vazio se não houver altura
+    formData.append("width", width ? String(width) : ""); // Pode ser vazio se não houver largura
+    formData.append("depth", depth ? String(depth) : ""); // Pode ser vazio se não houver profundidade
+    formData.append("categories", category || ""); // Corrigido para "categories"
+    formData.append("brand", brand || ""); // Corrigido para "brand"
+    formData.append("seoTitle", tagTitle || ""); // Corrigido para "seoTitle"
+    formData.append("seoDescription", metaDescription || ""); // Corrigido para "seoDescription"
+    formData.append("productUrl", productUrl || ""); // Corrigido para "productUrl"
+
+    productImages.forEach((image) => {
+      formData.append("images", image);
+    });
+
+    try {
+      const response = await fetch("http://localhost:3001/api/products", {
+        method: "POST",
+        body: formData
+      });
+
+      if (response.ok) {
+        console.log("Produto criado com sucesso!");
+        fetchProducts();
+      } else {
+        console.error("Erro ao criar produto:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Erro ao enviar dados:", error);
+    }
+  };
+
+  const handleImageSort = () => {
+    // Lógica para ordenar imagens
+  };
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogTrigger asChild>
@@ -107,6 +289,8 @@ export function ProductDialog({ isOpen, onClose }: ProductDialogProps) {
                 <Label htmlFor="productName">Nome do Produto *</Label>
                 <Input
                   id="productName"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
                   placeholder="Ex: Camiseta Básica Feminina"
                   maxLength={40}
                 />
@@ -115,19 +299,35 @@ export function ProductDialog({ isOpen, onClose }: ProductDialogProps) {
               <div className="space-y-4">
                 <div className="flex flex-wrap justify-between space-y-4 sm:space-y-0">
                   <div className="flex items-center space-x-2 w-full sm:w-auto">
-                    <Switch id="productActivated" />
+                    <Switch
+                      id="productActivated"
+                      checked={productActivated}
+                      onCheckedChange={(checked) =>
+                        setProductActivated(checked)
+                      }
+                    />
                     <Label htmlFor="productActivated">Produto ativado?</Label>
                   </div>
 
                   <div className="flex items-center space-x-2 w-full sm:w-auto">
-                    <Switch id="productVariation" />
+                    <Switch
+                      id="productVariation"
+                      checked={productVariation}
+                      onCheckedChange={(checked) =>
+                        setProductVariation(checked)
+                      }
+                    />
                     <Label htmlFor="productVariation">
                       Produto com variação?
                     </Label>
                   </div>
 
                   <div className="flex items-center space-x-2 w-full sm:w-auto">
-                    <Switch id="productFeatured" />
+                    <Switch
+                      id="productFeatured"
+                      checked={productFeatured}
+                      onCheckedChange={(checked) => setProductFeatured(checked)}
+                    />
                     <Label htmlFor="productFeatured">
                       Produto em destaque?
                     </Label>
@@ -135,7 +335,10 @@ export function ProductDialog({ isOpen, onClose }: ProductDialogProps) {
 
                   <div className="space-y-2 w-full sm:w-auto">
                     <Label htmlFor="productStatus">Situação do produto</Label>
-                    <Select>
+                    <Select
+                      value={productStatus}
+                      onValueChange={(value) => setProductStatus(value)}
+                    >
                       <SelectTrigger className="rounded-lg">
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
@@ -187,17 +390,19 @@ export function ProductDialog({ isOpen, onClose }: ProductDialogProps) {
                     id="productImages"
                     className="hidden"
                     ref={fileInputRef}
+                    onChange={handleFileChange}
                   />
                   <Button
                     variant="outline"
                     className="border-none hover:bg-transparent hover:text-stone-400 flex items-center"
-                    onClick={handleClick}
+                    onClick={() => fileInputRef.current?.click()}
                   >
                     <UploadIcon className="mr-2" /> Escolher imagens
                   </Button>
                   <Button
                     variant="outline"
                     className="border-none hover:bg-transparent hover:text-stone-400 flex items-center"
+                    onClick={handleImageSort}
                   >
                     <ArrowLeftRight className="mr-2" />
                     Ordenar imagens
@@ -206,13 +411,24 @@ export function ProductDialog({ isOpen, onClose }: ProductDialogProps) {
 
                 <div>
                   <Label htmlFor="productVideo">Vídeo do produto</Label>
-                  <Input id="productVideo" placeholder="URL do vídeo" />
+                  <Input
+                    id="productVideo"
+                    value={productVideo}
+                    onChange={(e) => setProductVideo(e.target.value)}
+                    placeholder="URL do vídeo"
+                  />
                 </div>
 
                 <div className="flex flex-col sm:flex-row justify-between space-x-0 sm:space-x-4 space-y-4 sm:space-y-0">
                   <div className="flex flex-col space-y-2 w-full sm:w-1/3">
                     <Label htmlFor="costPrice">Preço de custo</Label>
-                    <Input id="costPrice" type="number" placeholder="R$" />
+                    <Input
+                      id="costPrice"
+                      type="number"
+                      value={costPrice}
+                      onChange={(e) => setCostPrice(Number(e.target.value))}
+                      placeholder="R$"
+                    />
                   </div>
 
                   <div className="flex flex-col space-y-2 w-full sm:w-1/3">
@@ -220,6 +436,8 @@ export function ProductDialog({ isOpen, onClose }: ProductDialogProps) {
                     <Input
                       id="sellingPrice"
                       type="number"
+                      value={sellingPrice}
+                      onChange={(e) => setSellingPrice(Number(e.target.value))}
                       placeholder="R$"
                       required
                     />
@@ -227,27 +445,54 @@ export function ProductDialog({ isOpen, onClose }: ProductDialogProps) {
 
                   <div className="flex flex-col space-y-2 w-full sm:w-1/3">
                     <Label htmlFor="promoPrice">Preço promocional</Label>
-                    <Input id="promoPrice" type="number" placeholder="R$" />
+                    <Input
+                      id="promoPrice"
+                      type="number"
+                      value={promoPrice}
+                      onChange={(e) => setPromoPrice(Number(e.target.value))}
+                      placeholder="R$"
+                    />
                   </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row justify-between space-x-0 sm:space-x-4 space-y-4 sm:space-y-0">
                   <div className="flex flex-col space-y-2 w-full sm:w-1/4">
                     <Label htmlFor="productSKU">SKU *</Label>
-                    <Input id="productSKU" placeholder="SKU" required />
+                    <Input
+                      id="productSKU"
+                      value={productSKU}
+                      onChange={(e) => setProductSKU(e.target.value)}
+                      placeholder="SKU"
+                      required
+                    />
                   </div>
 
                   <div className="flex flex-col space-y-2 w-full sm:w-1/4">
                     <Label htmlFor="gtin">GTIN</Label>
-                    <Input id="gtin" placeholder="GTIN" />
+                    <Input
+                      id="gtin"
+                      value={gtin}
+                      onChange={(e) => setGtin(e.target.value)}
+                      placeholder="GTIN"
+                    />
                   </div>
                   <div className="flex flex-col space-y-2 w-full sm:w-1/4">
                     <Label htmlFor="mpn">MPN</Label>
-                    <Input id="mpn" placeholder="MPN" />
+                    <Input
+                      id="mpn"
+                      value={mpn}
+                      onChange={(e) => setMpn(e.target.value)}
+                      placeholder="MPN"
+                    />
                   </div>
                   <div className="flex flex-col space-y-2 w-full sm:w-1/4">
                     <Label htmlFor="ncm">NCM</Label>
-                    <Input id="ncm" placeholder="NCM" />
+                    <Input
+                      id="ncm"
+                      value={ncm}
+                      onChange={(e) => setNcm(e.target.value)}
+                      placeholder="NCM"
+                    />
                   </div>
                 </div>
 
@@ -257,24 +502,24 @@ export function ProductDialog({ isOpen, onClose }: ProductDialogProps) {
                     <Input
                       id="quantity"
                       type="number"
+                      value={quantity}
+                      onChange={(e) => setQuantity(Number(e.target.value))}
                       placeholder="Quantidade"
                     />
                   </div>
                   <div className="flex flex-col space-y-2 w-full sm:w-1/2">
                     <Label htmlFor="availability">Disponibilidade</Label>
-                    <Select>
+                    <Select
+                      value={availability}
+                      onValueChange={(value) => setAvailability(value)}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="immediate">
-                          Disponibilidade imediata
-                        </SelectItem>
-                        <SelectItem value="whenOutOfStock">
-                          Quando acabar o estoque
-                        </SelectItem>
-                        <SelectItem value="unavailable">
-                          Tornar o produto indisponível
+                        <SelectItem value="disponível">Disponível</SelectItem>
+                        <SelectItem value="indisponível">
+                          Indisponível
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -283,85 +528,108 @@ export function ProductDialog({ isOpen, onClose }: ProductDialogProps) {
 
                 <div className="text-muted-foreground mt-2">
                   <p>
-                    0 unidades deste produto estão reservadas, restando 0 para
-                    venda.
+                    0 unidades deste produto estão reservadas, restando 0
+                    disponíveis para venda.
                   </p>
                 </div>
 
-                <div>
-                  <Label htmlFor="packageSize">
-                    Qual é o tamanho da embalagem do produto?
-                  </Label>
-                  <Input id="packageSize" placeholder="Ex: 30x20x20" />
-                </div>
                 <div className="flex flex-col sm:flex-row space-x-0 sm:space-x-4 justify-between space-y-4 sm:space-y-0">
-                  <div className="flex flex-col space-y-2 w-full sm:w-1/4">
+                  <div className="flex flex-col space-y-2 w-full sm:w-1/3">
+                    <Label htmlFor="packageSize">Tamanho da embalagem</Label>
+                    <Input
+                      id="packageSize"
+                      value={packageSize}
+                      onChange={(e) => setPackageSize(e.target.value)}
+                      placeholder="Ex: 10x10x10 cm"
+                    />
+                  </div>
+
+                  <div className="flex flex-col space-y-2 w-full sm:w-1/3">
                     <Label htmlFor="weight">Peso</Label>
-                    <Input id="weight" type="number" placeholder="Kg" />
+                    <Input
+                      id="weight"
+                      type="number"
+                      value={weight}
+                      onChange={(e) => setWeight(Number(e.target.value))}
+                      placeholder="Peso em gramas"
+                    />
                   </div>
 
-                  <div className="flex flex-col space-y-2 w-full sm:w-1/4">
-                    <Label htmlFor="height">Altura</Label>
-                    <Input id="height" type="number" placeholder="cm" />
-                  </div>
-
-                  <div className="flex flex-col space-y-2 w-full sm:w-1/4">
-                    <Label htmlFor="width">Largura</Label>
-                    <Input id="width" type="number" placeholder="cm" />
-                  </div>
-
-                  <div className="flex flex-col space-y-2 w-full sm:w-1/4">
-                    <Label htmlFor="depth">Profundidade</Label>
-                    <Input id="depth" type="number" placeholder="cm" />
+                  <div className="flex flex-col space-y-2 w-full sm:w-1/3">
+                    <Label htmlFor="dimensions">Dimensões</Label>
+                    <div className="flex space-x-2">
+                      <Input
+                        id="height"
+                        type="number"
+                        value={height}
+                        onChange={(e) => setHeight(Number(e.target.value))}
+                        placeholder="Altura"
+                      />
+                      <Input
+                        id="width"
+                        type="number"
+                        value={width}
+                        onChange={(e) => setWidth(Number(e.target.value))}
+                        placeholder="Largura"
+                      />
+                      <Input
+                        id="depth"
+                        type="number"
+                        value={depth}
+                        onChange={(e) => setDepth(Number(e.target.value))}
+                        placeholder="Profundidade"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <CategoryManager />
-                </div>
-
-                <div>
-                  <Label htmlFor="availability">Marca</Label>
-                  <Select>
-                    <SelectTrigger>
+                <div className="space-y-2">
+                  <Label htmlFor="categories">Categorias</Label>
+                  <Select
+                    value={category}
+                    onValueChange={(value) => setCategory(value)}
+                  >
+                    <SelectTrigger className="rounded-lg">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="immediate">Ceres Brasil</SelectItem>
-                      <SelectItem value="whenOutOfStock">Origens</SelectItem>
-                      <SelectItem value="unavailable">Bold</SelectItem>
+                      {/* Adicione suas opções de categorias aqui */}
                     </SelectContent>
                   </Select>
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="brand">Marca</Label>
+                  <Input
+                    id="brand"
+                    value={brand}
+                    onChange={(e) => setBrand(e.target.value)}
+                    placeholder="Marca"
+                  />
+                </div>
+
                 <div className="">
-                  <SeoPreview />
+                  <SeoPreview
+                    tagTitle={tagTitle}
+                    setTagTitle={setTagTitle}
+                    metaDescription={metaDescription}
+                    setMetaDescription={setMetaDescription}
+                    productUrl={productUrl}
+                    setProductUrl={setProductUrl}
+                  />
+                </div>
+                <div className="flex justify-between">
+                  <Button type="button" variant="outline" onClick={onClose}>
+                    Cancelar
+                  </Button>
+                  <Button type="button" onClick={handleSubmit}>
+                    Salvar
+                  </Button>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        <div className="flex flex-col sm:flex-row justify-between items-center mt-4 space-y-4 sm:space-y-0 space-x-0 sm:space-x-4">
-          <div className="flex flex-col space-y-3">
-            <div className="flex items-center space-x-4">
-              <Label>Data de criação:</Label>
-              <p>{creationDate}</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Label>Data de modificação:</Label>
-              <p>{modificationDate}</p>
-            </div>
-          </div>
-          <div className="flex space-x-4">
-            <Button className="py-5 px-10 bg-stone-600" onClick={onClose}>
-              Salvar
-            </Button>
-            <Button className="py-5 px-10 bg-stone-600" onClick={onClose}>
-              Fechar
-            </Button>
-          </div>
-        </div>
       </DialogContent>
     </Dialog>
   );

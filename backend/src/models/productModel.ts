@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 interface IProduct extends Document {
   productName: string;
   productActivated: boolean;
-  productVariation: boolean;
+  productVariation: boolean; // Verifique se é boolean ou se precisa ser um string/array
   productFeatured: boolean;
   productStatus: string;
   productDescription: string;
@@ -35,24 +35,24 @@ interface IProduct extends Document {
 const ProductSchema: Schema = new Schema({
   productName: { type: String, required: true, maxLength: 40 },
   productActivated: { type: Boolean, default: false },
-  productVariation: { type: Boolean, default: false },
+  productVariation: { type: Boolean, default: false }, // Confirme se boolean é o tipo correto
   productFeatured: { type: Boolean, default: false },
   productStatus: { type: String, enum: ["novo", "usado"], default: "novo" },
-  productDescription: { type: String, required: true },
+  productDescription: { type: String, required: false },
   productImages: { type: [String], default: [] },
   productVideo: { type: String },
-  costPrice: { type: Number, required: true },
-  sellingPrice: { type: Number, required: true },
+  costPrice: { type: Number, required: false },
+  sellingPrice: { type: Number, required: false },
   promoPrice: { type: Number },
-  productSKU: { type: String, required: true },
+  productSKU: { type: String, required: false },
   gtin: { type: String },
   mpn: { type: String },
   ncm: { type: String },
-  quantity: { type: Number, required: true },
+  quantity: { type: Number, required: false },
   availability: {
     type: String,
-    enum: ["immediate", "whenOutOfStock", "unavailable"],
-    default: "immediate"
+    enum: ["disponível", "indisponível"],
+    default: "disponível"
   },
   reservedQuantity: { type: Number, default: 0 },
   packageSize: { type: String },

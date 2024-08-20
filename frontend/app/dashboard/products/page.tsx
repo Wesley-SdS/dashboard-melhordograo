@@ -1,7 +1,7 @@
 "use client";
+
 import Image from "next/image";
 import Link from "next/link";
-
 import {
   ChevronLeft,
   File,
@@ -19,10 +19,10 @@ import {
   Users2,
   Eye,
   Edit,
-  Trash
+  Trash,
+  ChevronRight
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -69,7 +69,6 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
-
 import {
   Tooltip,
   TooltipContent,
@@ -78,12 +77,14 @@ import {
 } from "@/components/ui/tooltip";
 import { ProductDialog } from "@/components/ProductDialog";
 import { useEffect, useState } from "react";
+import axios from "axios";
+import { Product } from "@/app/types/types";
 
 // Componente para contagem de produtos e paginação
-const ProductCount: React.FC<{ currentCount: number; totalCount: number }> = ({
-  currentCount,
-  totalCount
-}) => {
+const ProductCount: React.FC<{
+  currentCount: number;
+  totalCount: number;
+}> = ({ currentCount, totalCount }) => {
   return (
     <div className="flex justify-between items-center p-4">
       <span>{`Mostrando ${currentCount} de ${totalCount} total`}</span>
@@ -95,19 +96,36 @@ export default function Products() {
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [products, setProducts] = useState<any[]>([]);
 
-  const products = new Array(71).fill(null).map((_, index) => ({
-    id: index + 1,
-    name: `Produto ${index + 1}`,
-    category: `Categoria ${Math.ceil((index + 1) / 10)}`,
-    price: `R$${(index + 1) * 10},00`,
-    stock: 20,
-    availability: "Disponível",
+  const [totalItems, setTotalItems] = useState(0);
+  useEffect(() => {
+    let isMounted = true;
 
-    image: `/images/product-${index + 1}.jpg`
-  }));
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get("http://localhost:3001/api/products", {
+          params: {
+            page: currentPage,
+            limit: itemsPerPage
+          }
+        });
+        if (isMounted) {
+          setProducts(response.data.products);
+          setTotalItems(response.data.total);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar produtos:", error);
+      }
+    };
 
-  const totalItems = products.length;
+    fetchProducts();
+
+    return () => {
+      isMounted = false; // set flag to false on cleanup
+    };
+  }, [currentPage, itemsPerPage]);
+
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   const handleOpenDialog = () => {
@@ -119,17 +137,24 @@ export default function Products() {
   };
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
   useEffect(() => {
     setCurrentPage(1);
   }, [itemsPerPage]);
 
-  const currentProducts = products.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  const [mode, setMode] = useState<"create" | "edit">("create"); // Defina o modo como necessário
+
+  const handleProductSelect = (product: Product) => {
+    setSelectedProduct(product);
+    setMode("edit"); // Ajuste o modo se necessário
+    setDialogOpen(true);
+  };
   return (
     <TooltipProvider>
       <div className="flex min-h-screen w-full flex-col bg-muted/40">
@@ -252,7 +277,7 @@ export default function Products() {
                   </Link>
                   <Link
                     href="#"
-                    className="flex items-center gap-4 px-2.5 text-foreground"
+                    className="flex items-center gap-4 px-2.5 text-accent"
                   >
                     <Package className="h-5 w-5" />
                     Products
@@ -269,346 +294,201 @@ export default function Products() {
                     className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
                   >
                     <LineChart className="h-5 w-5" />
+                    Analytics
+                  </Link>
+                  <Link
+                    href="#"
+                    className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <Settings className="h-5 w-5" />
                     Settings
                   </Link>
                 </nav>
               </SheetContent>
             </Sheet>
-            <Breadcrumb className="hidden md:flex">
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink asChild>
-                    <Link href="#">Dashboard</Link>
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbLink asChild>
-                    <Link href="#">Products</Link>
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Edit Product</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-            <div className="relative ml-auto flex-1 md:grow-0">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search..."
-                className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[320px]"
-              />
+            <div className="hidden flex-1 items-center justify-between sm:flex">
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbLink href="#">Products</BreadcrumbLink>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="overflow-hidden rounded-full"
-                >
-                  <Image
-                    src="/placeholder-user.jpg"
-                    width={36}
-                    height={36}
-                    alt="Avatar"
-                    className="overflow-hidden rounded-full"
-                  />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuItem>Support</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Logout</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </header>
-
-          <div className="mx-4 mt-12">
-            <div className=" flex justify-between items-center">
-              <div className="flex items-center">
-                <ProductCount
-                  currentCount={currentProducts.length}
-                  totalCount={totalItems}
-                />
-                <Select
-                  value={itemsPerPage.toString()}
-                  onValueChange={(value) => setItemsPerPage(Number(value))}
-                >
-                  <SelectTrigger className="rounded-lg w-[100px]">
-                    <SelectValue placeholder="Itens por página" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="25">25</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                    <SelectItem value="75">75</SelectItem>
-                  </SelectContent>
-                </Select>
+          <div className="flex-1 px-4 py-6 sm:px-6">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold">Products</h1>
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Search products..."
+                    className="hidden w-96 md:block"
+                  />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline">
+                        <ListFilter className="mr-2 h-4 w-4" />
+                        Filter
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuLabel>Filters</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuCheckboxItem>
+                        In Stock
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem>
+                        Out of Stock
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem>Price</DropdownMenuCheckboxItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Button onClick={handleOpenDialog}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Product
+                  </Button>
+                </div>
               </div>
-
-              <div className="flex gap-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 gap-1 text-sm"
-                    >
-                      <ListFilter className="h-3.5 w-3.5" />
-                      <span className="sr-only sm:not-sr-only">Filtrar</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Filtrar por:</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuCheckboxItem checked>
-                      Fulfilled
-                    </DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem>
-                      Declined
-                    </DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem>
-                      Refunded
-                    </DropdownMenuCheckboxItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 gap-1 text-sm"
-                >
-                  <File className="h-3.5 w-3.5" />
-                  <span className="sr-only sm:not-sr-only">Exportar</span>
-                </Button>
-              </div>
-            </div>
-            <div className="hidden xl:block">
+              <ProductCount
+                currentCount={products.length}
+                totalCount={totalItems}
+              />
               <Table className="w-full min-w-[800px]">
-                <TableCaption className="text-center">
-                  Uma lista dos seus produtos recentes.
-                </TableCaption>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[50px] text-center">
-                      <div className="flex justify-center">
-                        <Checkbox />
-                      </div>
+                      <Checkbox />
                     </TableHead>
                     <TableHead className="text-center">Produto</TableHead>
                     <TableHead className="text-center">Categoria</TableHead>
                     <TableHead className="text-center">Preço</TableHead>
                     <TableHead className="text-center">Estoque</TableHead>
-                    <TableHead className="text-center">
-                      Disponibilidade
-                    </TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="text-center">Ação</TableHead>
+                    <TableHead className="text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {currentProducts.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell className="w-[50px] text-center">
-                        <div className="flex justify-center items-center pl-3">
-                          <Checkbox />
-                        </div>
-                      </TableCell>
-                      <TableCell className="flex items-center space-x-7">
-                        <Image
-                          src={product.image}
-                          alt={product.name}
-                          width={50}
-                          height={50}
-                          className="rounded"
-                        />
-                        <span>{product.name}</span>
+                  {products.map((product: any) => (
+                    <TableRow key={product._id}>
+                      <TableCell className="text-center">
+                        <Checkbox />
                       </TableCell>
                       <TableCell className="text-center">
-                        {product.category}
+                        {product.productName}
                       </TableCell>
                       <TableCell className="text-center">
-                        {product.price}
+                        {product.categories.join(", ")}
                       </TableCell>
                       <TableCell className="text-center">
-                        {product.stock}
+                        {product.sellingPrice}
                       </TableCell>
                       <TableCell className="text-center">
-                        {product.availability}
+                        {product.quantity}
                       </TableCell>
-                      <TableCell className="text-center">
-                        <Select>
-                          <SelectTrigger className="w-[180px] mx-auto">
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="disponivel">
-                              Disponível
-                            </SelectItem>
-                            <SelectItem value="indisponivel">
-                              Indisponível
-                            </SelectItem>
-                            <SelectItem value="em_reabastecimento">
-                              Em Reabastecimento
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex justify-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            aria-label="Visualizar"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={handleOpenDialog}
-                            aria-label="Editar"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            aria-label="Excluir"
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </div>
+                      <TableCell className="text-center flex gap-2 justify-center">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="p-0"
+                              onClick={() => console.log("Ver produto")}
+                            >
+                              <Eye className="h-4 w-4" />
+                              <span className="sr-only">View</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">View</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="p-0"
+                              onClick={() => console.log("Editar produto")}
+                            >
+                              <Edit className="h-4 w-4" />
+                              <span className="sr-only">Edit</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">Edit</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="p-0"
+                              onClick={() => console.log("Deletar produto")}
+                            >
+                              <Trash className="h-4 w-4" />
+                              <span className="sr-only">Delete</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">Delete</TooltipContent>
+                        </Tooltip>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            </div>
-
-            <div className="block xl:hidden">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-                {currentProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    className="border rounded-lg p-4 shadow-lg"
+              <div className="flex items-center justify-between py-4">
+                <div>
+                  <Label htmlFor="itemsPerPage">Items per page:</Label>
+                  <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={(value) => setItemsPerPage(Number(value))}
                   >
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      width={150}
-                      height={150}
-                      className="rounded"
-                    />
-                    <h3 className="text-lg font-semibold mt-2">
-                      {product.name}
-                    </h3>
-                    <p className="text-gray-600">{product.category}</p>
-                    <p className="text-gray-800 font-bold">{product.price}</p>
-                    <p className="text-gray-600">Estoque: {product.stock}</p>
-                    <p className="text-gray-600">
-                      Disponibilidade: {product.availability}
-                    </p>
-                    <div className="mt-2 flex justify-between">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        aria-label="Visualizar"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={handleOpenDialog}
-                        aria-label="Editar"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        aria-label="Excluir"
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="block md:hidden">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-                {currentProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    className="border rounded-lg p-4 shadow-lg"
+                    <SelectTrigger className="ml-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      handlePageChange(currentPage > 1 ? currentPage - 1 : 1)
+                    }
+                    disabled={currentPage === 1}
                   >
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      width={150}
-                      height={150}
-                      className="rounded"
-                    />
-                    <h3 className="text-lg font-semibold mt-2">
-                      {product.name}
-                    </h3>
-                    <p className="text-gray-600">{product.category}</p>
-                    <p className="text-gray-800 font-bold">{product.price}</p>
-                    <p className="text-gray-600">Estoque: {product.stock}</p>
-                    <p className="text-gray-600">
-                      Disponibilidade: {product.availability}
-                    </p>
-                    <div className="mt-2 flex justify-between">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        aria-label="Visualizar"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={handleOpenDialog}
-                        aria-label="Editar"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        aria-label="Excluir"
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <span className="mx-2">{`${currentPage} de ${totalPages}`}</span>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      handlePageChange(
+                        currentPage < totalPages ? currentPage + 1 : totalPages
+                      )
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
-
-            <ProductDialog isOpen={isDialogOpen} onClose={handleCloseDialog} />
-            <div className="flex justify-center mt-4">
-              {Array.from({ length: totalPages }, (_, i) => (
-                <Button
-                  key={i + 1}
-                  variant={i + 1 === currentPage ? "default" : "outline"}
-                  onClick={() => handlePageChange(i + 1)}
-                  className="mx-1"
-                >
-                  {i + 1}
-                </Button>
-              ))}
             </div>
           </div>
         </div>
+        <ProductDialog
+          isOpen={isDialogOpen}
+          onClose={handleCloseDialog}
+          product={selectedProduct} // Certifique-se de que isso seja do tipo Product
+          mode="edit" // ou "create"
+        />
       </div>
     </TooltipProvider>
   );

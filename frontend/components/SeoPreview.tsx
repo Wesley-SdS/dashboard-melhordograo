@@ -1,15 +1,25 @@
-"use client";
-
 import { useState, ChangeEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-export function SeoPreview() {
-  const [tagTitle, setTagTitle] = useState("");
-  const [metaDescription, setMetaDescription] = useState("");
-  const [productUrl, setProductUrl] = useState("");
+interface SeoPreviewProps {
+  tagTitle: string;
+  setTagTitle: (value: string) => void;
+  metaDescription: string;
+  setMetaDescription: (value: string) => void;
+  productUrl: string;
+  setProductUrl: (value: string) => void;
+}
 
+export function SeoPreview({
+  tagTitle,
+  setTagTitle,
+  metaDescription,
+  setMetaDescription,
+  productUrl,
+  setProductUrl
+}: SeoPreviewProps) {
   const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) =>
     setTagTitle(e.target.value);
   const handleDescriptionChange = (e: ChangeEvent<HTMLTextAreaElement>) =>
