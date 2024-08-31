@@ -218,40 +218,46 @@ export function ProductDialog({
   const handleSubmit = async () => {
     const formData = new FormData();
 
-    formData.append("productName", productName); // Corrigido para "productName"
-    formData.append("productActivated", String(productActivated)); // Corrigido para "productActivated"
-    formData.append("productVariation", String(productVariation)); // Corrigido para "productVariation"
-    formData.append("productFeatured", String(productFeatured)); // Corrigido para "productFeatured"
-    formData.append("productStatus", productStatus); // Corrigido para "productStatus"
-    formData.append("productDescription", productDescription); // Corrigido para "productDescription"
-    formData.append("productVideo", productVideo || ""); // Pode ser vazio se não houver vídeo
-    formData.append("costPrice", String(costPrice)); // Corrigido para "costPrice"
-    formData.append("sellingPrice", String(sellingPrice)); // Corrigido para "sellingPrice"
-    formData.append("promoPrice", promoPrice ? String(promoPrice) : ""); // Pode ser vazio se não houver preço promocional
-    formData.append("productSKU", productSKU); // Corrigido para "productSKU"
-    formData.append("gtin", gtin || ""); // Pode ser vazio se não houver GTIN
-    formData.append("mpn", mpn || ""); // Pode ser vazio se não houver MPN
-    formData.append("ncm", ncm || ""); // Pode ser vazio se não houver NCM
-    formData.append("quantity", String(quantity)); // Corrigido para "quantity"
-    formData.append("availability", availability); // Corrigido para "availability"
-    formData.append("packageSize", packageSize || ""); // Pode ser vazio se não houver tamanho de embalagem
-    formData.append("weight", weight ? String(weight) : ""); // Pode ser vazio se não houver peso
-    formData.append("height", height ? String(height) : ""); // Pode ser vazio se não houver altura
-    formData.append("width", width ? String(width) : ""); // Pode ser vazio se não houver largura
-    formData.append("depth", depth ? String(depth) : ""); // Pode ser vazio se não houver profundidade
-    formData.append("categories", category || ""); // Corrigido para "categories"
-    formData.append("brand", brand || ""); // Corrigido para "brand"
-    formData.append("seoTitle", tagTitle || ""); // Corrigido para "seoTitle"
-    formData.append("seoDescription", metaDescription || ""); // Corrigido para "seoDescription"
-    formData.append("productUrl", productUrl || ""); // Corrigido para "productUrl"
+    formData.append("productName", productName);
+    formData.append("productActivated", String(productActivated));
+    formData.append("productVariation", String(productVariation));
+    formData.append("productFeatured", String(productFeatured));
+    formData.append("productStatus", productStatus);
+    formData.append("productDescription", productDescription);
+    formData.append("productVideo", productVideo || "");
+    formData.append("costPrice", String(costPrice));
+    formData.append("sellingPrice", String(sellingPrice));
+    formData.append("promoPrice", promoPrice ? String(promoPrice) : "");
+    formData.append("productSKU", productSKU);
+    formData.append("gtin", gtin || "");
+    formData.append("mpn", mpn || "");
+    formData.append("ncm", ncm || "");
+    formData.append("quantity", String(quantity));
+    formData.append("availability", availability);
+    formData.append("packageSize", packageSize || "");
+    formData.append("weight", weight ? String(weight) : "");
+    formData.append("height", height ? String(height) : "");
+    formData.append("width", width ? String(width) : "");
+    formData.append("depth", depth ? String(depth) : "");
+    formData.append("categories", category || ""); // Corrigido para enviar corretamente a categoria
+    formData.append("brand", brand || ""); // Certifique-se de que a marca esteja sendo enviada corretamente
+    formData.append("seoTitle", tagTitle || "");
+    formData.append("seoDescription", metaDescription || "");
+    formData.append("productUrl", productUrl || "");
 
     productImages.forEach((image) => {
-      formData.append("images", image);
+      formData.append("images", image); // Corrigido para "images" conforme necessário pelo backend
     });
+
+    const token = localStorage.getItem("token");
+    console.log("Token armazenado:", token);
 
     try {
       const response = await fetch("http://localhost:3001/api/products", {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}` // Inclua o token aqui
+        },
         body: formData
       });
 

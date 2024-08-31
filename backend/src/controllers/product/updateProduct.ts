@@ -7,10 +7,17 @@ export const updateProduct = async (
 ): Promise<void> => {
   try {
     const productId = req.params.id;
+
+    // Validação do ID do produto
+    if (!productId) {
+      res.status(400).json({ message: "ID do produto é necessário" });
+      return;
+    }
+
     const updatedProduct = await Product.findByIdAndUpdate(
       productId,
       req.body,
-      { new: true }
+      { new: true, runValidators: true } 
     );
 
     if (!updatedProduct) {
@@ -22,7 +29,7 @@ export const updateProduct = async (
       .status(200)
       .json({ message: "Produto atualizado com sucesso", updatedProduct });
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao atualizar produto:", error);
     res.status(500).json({ message: "Erro ao atualizar produto" });
   }
 };

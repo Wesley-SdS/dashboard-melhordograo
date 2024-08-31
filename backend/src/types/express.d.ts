@@ -1,9 +1,11 @@
-import { User } from "../models/user"; // Importe o tipo User se você o tiver definido em outro lugar
+// src/types/express.d.ts
+import { Request } from "express";
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: User; // Ou qualquer tipo que você estiver usando para o usuário
-    }
+declare module "express-serve-static-core" {
+  interface Request {
+    user?: {
+      _id: string;
+      // adicione outras propriedades do usuário, se necessário
+    };
   }
 }

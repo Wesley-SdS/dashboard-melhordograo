@@ -13,11 +13,11 @@ interface SeoPreviewProps {
 }
 
 export function SeoPreview({
-  tagTitle,
+  tagTitle = "",
   setTagTitle,
-  metaDescription,
+  metaDescription = "",
   setMetaDescription,
-  productUrl,
+  productUrl = "",
   setProductUrl
 }: SeoPreviewProps) {
   const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) =>
@@ -27,9 +27,13 @@ export function SeoPreview({
   const handleUrlChange = (e: ChangeEvent<HTMLInputElement>) =>
     setProductUrl(e.target.value);
 
+  // Limites de caracteres
+  const MAX_TITLE_LENGTH = 70;
+  const MAX_DESCRIPTION_LENGTH = 250;
+
   return (
-    <div className="flex space-x-4 p-4 border rounded-lg">
-      <div className="w-1/2 space-y-4">
+    <div className="flex flex-col space-y-4 p-4 border rounded-lg sm:flex-row sm:space-x-4">
+      <div className="flex-1 space-y-4">
         <div className="space-y-2">
           <Label htmlFor="tagTitle">Tag Title</Label>
           <Input
@@ -37,9 +41,11 @@ export function SeoPreview({
             placeholder="Ex. Camiseta Básica Feminina"
             value={tagTitle}
             onChange={handleTitleChange}
+            maxLength={MAX_TITLE_LENGTH}
+            aria-describedby="tagTitleLength"
           />
-          <span className="text-gray-700 text-sm">
-            {tagTitle.length} de 70 caracteres
+          <span id="tagTitleLength" className="text-gray-700 text-sm">
+            {tagTitle?.length ?? 0} de {MAX_TITLE_LENGTH} caracteres
           </span>
         </div>
 
@@ -50,9 +56,12 @@ export function SeoPreview({
             placeholder="Ex. Esta camisa é uma peça ideal para compor looks relaxados ou sofisticados"
             value={metaDescription}
             onChange={handleDescriptionChange}
+            maxLength={MAX_DESCRIPTION_LENGTH}
+            aria-describedby="metaDescriptionLength"
           />
-          <span className="text-gray-700 text-sm">
-            {metaDescription.length} de 250 caracteres
+          <span id="metaDescriptionLength" className="text-gray-700 text-sm">
+            {metaDescription?.length ?? 0} de {MAX_DESCRIPTION_LENGTH}{" "}
+            caracteres
           </span>
         </div>
 
@@ -63,11 +72,15 @@ export function SeoPreview({
             placeholder="https://www.seusite.com.br/produto-exemplo"
             value={productUrl}
             onChange={handleUrlChange}
+            aria-describedby="productUrlHelp"
           />
+          <span id="productUrlHelp" className="text-gray-700 text-sm">
+            {productUrl}
+          </span>
         </div>
       </div>
 
-      <div className="w-1/2 mt-6 p-4 border rounded-lg">
+      <div className="flex-1 mt-6 p-4 border rounded-lg">
         <h3 className="text-lg font-bold">Pré-visualização</h3>
         <div className="mt-2">
           <p className="text-xl text-green-700">

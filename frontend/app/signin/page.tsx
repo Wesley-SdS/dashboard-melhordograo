@@ -2,21 +2,49 @@
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import Image from "next/image";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify"; // Importe o toast
 
 export default function Signin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const router = useRouter();
 
-  const handleSignIn = () => {
-    // Implementar lógica de signup
+  const handleSignIn = async () => {
+    try {
+      const response = await axios.post("http://localhost:3001/api/signin", {
+        email,
+        password
+      });
+
+      if (response.status === 200) {
+        const data = response.data;
+        localStorage.setItem("token", data.token);
+        console.log(
+          "Token salvo no localStorage:",
+          localStorage.getItem("token")
+        ); // Verifique se o token foi salvo
+        router.push("/");
+        router.push("/");
+        toast.success("Login bem-sucedido!"); // Exibe uma mensagem de sucesso
+      } else {
+        toast.error("Credenciais inválidas"); // Exibe uma mensagem de erro
+      }
+    } catch (error) {
+      console.error("Erro ao fazer login:", error);
+      toast.error(
+        "Ocorreu um erro durante o login. Por favor, tente novamente."
+      ); // Exibe uma mensagem de erro
+    }
   };
 
   const handleGoogleSignIn = () => {
-    // Implementar lógica de signup com Google
+    // Implementar lógica de login com Google
   };
 
   const handleGitHubSignIn = () => {
-    // Implementar lógica de signup com GitHub
+    // Implementar lógica de login com GitHub
   };
 
   return (
@@ -25,7 +53,7 @@ export default function Signin() {
         <Image
           src="/assets/dashboard.jpg"
           alt="Signup Image"
-          layout="fill"
+          fill
           objectFit="cover"
         />
       </div>
@@ -63,6 +91,7 @@ export default function Signin() {
           <button
             onClick={handleGoogleSignIn}
             className="flex items-center justify-center w-48 h-12 border-2 border-gray-300 rounded-md hover:bg-gray-100 focus:outline-none"
+            aria-label="Sign in with Google"
           >
             <Image
               src="/assets/google.webp"
@@ -75,6 +104,7 @@ export default function Signin() {
           <button
             onClick={handleGitHubSignIn}
             className="flex items-center justify-center w-48 h-12 border-2 border-gray-300 rounded-md hover:bg-gray-100 focus:outline-none"
+            aria-label="Sign in with GitHub"
           >
             <Image
               src="/assets/github.jpg"

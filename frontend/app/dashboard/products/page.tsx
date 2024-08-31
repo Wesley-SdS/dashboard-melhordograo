@@ -77,8 +77,9 @@ import {
 } from "@/components/ui/tooltip";
 import { ProductDialog } from "@/components/ProductDialog";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axios from "@/utils/axiosConfig";
 import { Product } from "@/app/types/types";
+import ProductTable from "@/components/pageProduct/ProductTable";
 
 // Componente para contagem de produtos e paginação
 const ProductCount: React.FC<{
@@ -358,85 +359,7 @@ export default function Products() {
                 currentCount={products.length}
                 totalCount={totalItems}
               />
-              <Table className="w-full min-w-[800px]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[50px] text-center">
-                      <Checkbox />
-                    </TableHead>
-                    <TableHead className="text-center">Produto</TableHead>
-                    <TableHead className="text-center">Categoria</TableHead>
-                    <TableHead className="text-center">Preço</TableHead>
-                    <TableHead className="text-center">Estoque</TableHead>
-                    <TableHead className="text-center">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {products.map((product: any) => (
-                    <TableRow key={product._id}>
-                      <TableCell className="text-center">
-                        <Checkbox />
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {product.productName}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {product.categories.join(", ")}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {product.sellingPrice}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {product.quantity}
-                      </TableCell>
-                      <TableCell className="text-center flex gap-2 justify-center">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="p-0"
-                              onClick={() => console.log("Ver produto")}
-                            >
-                              <Eye className="h-4 w-4" />
-                              <span className="sr-only">View</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">View</TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="p-0"
-                              onClick={() => console.log("Editar produto")}
-                            >
-                              <Edit className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">Edit</TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="p-0"
-                              onClick={() => console.log("Deletar produto")}
-                            >
-                              <Trash className="h-4 w-4" />
-                              <span className="sr-only">Delete</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">Delete</TooltipContent>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <ProductTable />
               <div className="flex items-center justify-between py-4">
                 <div>
                   <Label htmlFor="itemsPerPage">Items per page:</Label>
